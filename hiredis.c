@@ -962,21 +962,28 @@ redisPushFn *redisSetPushCallback(redisContext *c, redisPushFn *fn) {
  * After this function is called, you may use redisGetReplyFromReader to
  * see if there is a reply available. */
 int redisBufferRead(redisContext *c) {
-    char buf[1024*16];
+    //char buf[1024*16];
+    char *buf = (char *)malloc(1024*16);
     int nread;
 
     /* Return early when the context has seen an error. */
-    if (c->err)
+    if (c->err) {
+        free(buf);
         return REDIS_ERR;
+    }
 
     nread = c->funcs->read(c, buf, sizeof(buf));
     if (nread < 0) {
+        free(buf);
         return REDIS_ERR;
     }
     if (nread > 0 && redisReaderFeed(c->reader, buf, nread) != REDIS_OK) {
         __redisSetError(c, c->reader->err, c->reader->errstr);
+        free(buf);
         return REDIS_ERR;
     }
+    
+    free(buf);
     return REDIS_OK;
 }
 
